@@ -12,7 +12,9 @@ from tld import get_tld
 import requests as r
 import simplejson as json
 import dns.resolver
-from flask.ext.bcrypt import Bcrypt
+from flask import Response
+
+from flask_bcrypt import Bcrypt
 
 
 from flask_jwt_extended import JWTManager, jwt_required,\
@@ -134,8 +136,10 @@ def login():
     if expected is None or not bcrypt.check_password_hash(expected['password'],password):
         return json.dumps({"msg": "Bad username or password"}), 401
 
+    userId = str(expected['_id'])
+
     # Identity can be any data that is json serializable
-    ret = {'access_token': create_access_token(identity=username)}
+    ret = {'access_token': create_access_token(identity=userId)}
     return json.dumps(ret), 200
 
 # Provide a method to create access tokens. The create_access_token()
@@ -149,31 +153,41 @@ def checkOwnedFile(id):
     owned = False
     if site is not None:
         try:
-            res = r.get('http://'+get_tld(site.url)+'/'+current_user._id)
-            if current_user._id in res.text:
+            res = r.get('http://'+get_tld(site['url'])+'/'+current_user+'.txt')
+            if current_user in res.text:
                 owned = True
         except:
             try:
-                res = r.get('http://www.'+get_tld(site.url)+'/'+current_user._id)
-                if current_user._id in res.text:
+                res = r.get('http://www.'+get_tld(site['url'])+'/'+current_user+'.txt')
+                if current_user in res.text:
                     owned = True
                 else:
                     owned = False
             except:
                 owned = False
         if(owned):
-            res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set":{owned:current_user._id}},
+            res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set":{owned:current_user}},
                                                             return_document=ReturnDocument.AFTER))
             return res
         else:
             return None
+
+@app.route('/owned/gen', methods=['GET'])
+@jwt_required
+def genTxt():
+    current_user = get_jwt_identity()
+    return Response(current_user,
+                    mimetype="text/plain",
+                    headers={"Content-Disposition":
+                                 "attachment;filename="+current_user+".txt"})
+
 
 @app.route('/owned/<string:id>/cname', methods=['GET'])
 @jwt_required
 def checkOwned(id):
     current_user = get_jwt_identity()
     site = site_collection.find({"_id":ObjectId(id)})
-    url = 'http://'+current_user._id+get_tld(site.url)
+    url = 'http://'+current_user+get_tld(site.url)
     cname = dns.resolver.query(url, 'CNAME')
     owned = False
     for i in cname.response.answer:
@@ -182,7 +196,7 @@ def checkOwned(id):
                 owned = True
                 break
     if (owned):
-        res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set": {owned: current_user._id}},
+        res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set": {owned: current_user}},
                                                         return_document=ReturnDocument.AFTER))
         return res
     else:
