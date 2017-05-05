@@ -69,7 +69,7 @@ def hybridSearch():
                 findObject['$and'].append(orObj)
         else:
             andObj = {'$and':[]}
-            for i in range(1,len(query_domain)-1):
+            for i in range(1,len(query_domain)):
                 regexStr = '\\' + query_domain[i]
                 andObj['$and'].append({"url":{'$not' :re.compile(regexStr)}})
             if len(andObj['$and'])>0:
