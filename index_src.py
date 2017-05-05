@@ -188,7 +188,7 @@ def genTxt():
 def checkOwned(id):
     current_user = get_jwt_identity()
     site = site_collection.find({"_id":ObjectId(id)})
-    url = 'http://'+current_user+get_tld(site.url)
+    url = 'http://'+current_user+get_tld(site['url'])
     cname = dns.resolver.query(url, 'CNAME')
     owned = False
     for i in cname.response.answer:
@@ -197,12 +197,11 @@ def checkOwned(id):
                 owned = True
                 break
     if (owned):
-        res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set": {owned: current_user}},
+        res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set": {"owned": current_user}},
                                                         return_document=ReturnDocument.AFTER))
         return res
     else:
-        return None
-
+        return 'False'
 
 
 # Provide a method to create access tokens. The create_access_token()
