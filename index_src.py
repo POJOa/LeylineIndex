@@ -131,7 +131,7 @@ def login():
     password = request.json.get('password', None)
     expected = user_collection.find_one({"username":username})
 
-    if expected is None or bcrypt.check_password_hash(expected['password'],password):
+    if expected is None or not bcrypt.check_password_hash(expected['password'],password):
         return json.dumps({"msg": "Bad username or password"}), 401
 
     # Identity can be any data that is json serializable
@@ -200,7 +200,8 @@ def reg():
         return 'false',403
     else:
         pw_hash = bcrypt.generate_password_hash(password)
-        user_collection.insert({"username":username,"password":pw_hash}),200
+        res = user_collection.insert({"username":username,"password":pw_hash})
+        return dumps(res),200
 
 @app.route('/reg/exists/<string:username>', methods=['GET'])
 def checkNameExists(username):
