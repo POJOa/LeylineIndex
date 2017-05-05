@@ -149,7 +149,7 @@ def login():
 
 def checkOwnedFile(id):
     current_user = get_jwt_identity()
-    site = site_collection.find({"_id":ObjectId(id)})
+    site = site_collection.find_one({"_id":ObjectId(id)})
     owned = False
     if site is not None:
         try:
@@ -166,11 +166,12 @@ def checkOwnedFile(id):
             except:
                 owned = False
         if(owned):
-            res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set":{owned:current_user}},
+
+            res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set":{"owned":current_user}},
                                                             return_document=ReturnDocument.AFTER))
             return res
         else:
-            return None
+            return 'False'
 
 @app.route('/owned/gen', methods=['GET'])
 @jwt_required
