@@ -12,11 +12,15 @@ from tld import get_tld
 import requests as r
 import simplejson as json
 import dns.resolver
+from flask.ext.bcrypt import Bcrypt
+
 
 from flask_jwt_extended import JWTManager, jwt_required,\
     create_access_token, get_jwt_identity
 
 app = Flask(__name__)
+bcrypt = Bcrypt(app)
+
 app.secret_key = get_secret()
 jwt = JWTManager(app)
 
@@ -127,7 +131,7 @@ def login():
     password = request.json.get('password', None)
     expected = user_collection.find_one({"username":username})
 
-    if expected is None or password != expected.password:
+    if expected is None or bcrypt.check_password_hash(expected['password'],password):
         return json.dumps({"msg": "Bad username or password"}), 401
 
     # Identity can be any data that is json serializable
@@ -162,7 +166,7 @@ def checkOwnedFile(id):
                                                             return_document=ReturnDocument.AFTER))
             return res
         else:
-            return json.dumps(False)
+            return None
 
 @app.route('/owned/<string:id>/cname', methods=['GET'])
 @jwt_required
@@ -182,7 +186,7 @@ def checkOwned(id):
                                                         return_document=ReturnDocument.AFTER))
         return res
     else:
-        return json.dumps(False)
+        return None
 
 
 
@@ -193,9 +197,10 @@ def reg():
     username = request.json.get('username', None)
     password = request.json.get('password', None)
     if checkNameExists(username):
-        return False
+        return 'false',403
     else:
-        user_collection.insert({"username":username,"password":password})
+        pw_hash = bcrypt.generate_password_hash(password)
+        user_collection.insert({"username":username,"password":pw_hash}),200
 
 @app.route('/reg/exists/<string:username>', methods=['GET'])
 def checkNameExists(username):
