@@ -1,18 +1,18 @@
-from flask import Flask
 import pymongo
+import re
+import requests as r
+import simplejson as json
+import dns.resolver
+from flask import Flask
+from flask import request
+from flask import Response
 from pymongo import MongoClient
 from bson.json_util import dumps
 from flask_cors import CORS
 from bson.objectid import ObjectId
-from flask import request
 from pymongo import ReturnDocument
 from secret import get_secret
-import re
 from tld import get_tld
-import requests as r
-import simplejson as json
-import dns.resolver
-from flask import Response
 
 from flask_bcrypt import Bcrypt
 
@@ -63,7 +63,7 @@ def hybridSearch():
 
 
     if query_owned is not None and query_owned is True:
-        findObject['owned'] = True
+        findObject['owned'] = {"$exists":True}
 
     findObject['$and'] = []
     if query_domain is not None:
@@ -95,15 +95,18 @@ def hybridSearch():
         del findObject['$and']
 
     cursor = site_collection.find(findObject).skip(skip).limit(page_size)
+
     if query_sort is not None and len(query_sort)>0:
         query_sort_tupple = []
+        query_sort_tupple.append(('owned', pymongo.DESCENDING))
         for e in query_sort:
             for k in e.items():
                 query_sort_tupple.append(k)
-        query_sort_tupple.append(('owned', pymongo.DESCENDING))
-        query_sort_tupple.append(('createdAt', pymongo.DESCENDING))
 
         cursor = cursor.sort(query_sort_tupple)
+    else:
+        cursor = cursor.sort('owned',pymongo.DESCENDING)
+
 
 
     count = int(cursor.count() / page_size)
@@ -204,8 +207,6 @@ def checkOwned(id):
         return 'False'
 
 
-# Provide a method to create access tokens. The create_access_token()
-# function is used to actually generate the token
 @app.route('/reg', methods=['POST'])
 def reg():
     username = request.json.get('username', None)
