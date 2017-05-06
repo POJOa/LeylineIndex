@@ -187,8 +187,8 @@ def genTxt():
 @jwt_required
 def checkOwned(id):
     current_user = get_jwt_identity()
-    site = site_collection.find({"_id":ObjectId(id)})
-    url = 'http://'+current_user+get_tld(site['url'])
+    site = site_collection.find_one({"_id":ObjectId(id)})
+    url = current_user+'.'+get_tld(site['url'])
     cname = dns.resolver.query(url, 'CNAME')
     owned = False
     for i in cname.response.answer:
