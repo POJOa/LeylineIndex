@@ -224,6 +224,11 @@ def checkNameExists(username):
     return expected is not None
 
 
+@app.route('/users/<string:id>', methods=['GET'])
+def getUser(id):
+    expected = user_collection.find_one({"_id": ObjectId(id)})
+    return dumps(expected)
+
 @app.route('/protected', methods=['GET'])
 @jwt_required
 def protected():
