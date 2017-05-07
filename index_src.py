@@ -225,6 +225,27 @@ def checkOwned(id):
     else:
         return 'False'
 
+@app.route('/like/<string:id>', methods=['GET'])
+@jwt_required
+def like(id):
+    current_user = get_jwt_identity()
+    site = site_collection.find_one({"_id":ObjectId(id)})
+    if site is not None:
+        res = dumps(user_collection.find_one_and_update({'_id': ObjectId(current_user)},{"$push":{"liked":[site['_id']]}},
+                                                        return_document=ReturnDocument.AFTER))
+        return res
+    return 'False'
+
+@app.route('/follow/<string:id>', methods=['GET'])
+@jwt_required
+def follow(id):
+    current_user = get_jwt_identity()
+    user_to_follow = user_collection.find_one({"_id":ObjectId(id)})
+    if user_to_follow is not None:
+        res = dumps(user_collection.find_one_and_update({'_id': ObjectId(current_user)},{"$push":{"following":[user_to_follow['_id']]}},
+                                                        return_document=ReturnDocument.AFTER))
+        return res
+    return 'False'
 
 @app.route('/owned/<string:id>/meta', methods=['GET'])
 @jwt_required
