@@ -14,7 +14,7 @@ from bson.objectid import ObjectId
 from pymongo import ReturnDocument
 from secret import get_secret
 from tld import get_tld
-
+import datetime
 from flask_bcrypt import Bcrypt
 
 
@@ -28,6 +28,7 @@ app.secret_key = get_secret()
 jwt = JWTManager(app)
 
 CORS(app,automatic_options=False)
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = datetime.timedelta(days=365)
 client = MongoClient('mongodb://localhost:27017/')
 db = client.src_index
 site_collection = db.NewSites
@@ -266,7 +267,7 @@ def checkNameExists(username):
 
 @app.route('/users/<string:id>', methods=['GET'])
 def getUser(id):
-    expected = user_collection.find_one({"_id": ObjectId(id)})
+    expected = user_collection.find_one({"_id": ObjectId(id)},{"password":0})
     return dumps(expected)
 
 @app.route('/protected', methods=['GET'])
