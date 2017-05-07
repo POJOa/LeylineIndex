@@ -148,14 +148,14 @@ def add(url):
         rootDomain = get_tld(urlWithHTTP)
         res = r.get(urlWithHTTP)
         res.raise_for_status()
+        existed = site_collection.find({"url": {"$regex": rootDomain}})
+        if len(existed) > 0:
+            for e in existed:
+                if (get_tld(e['url']) == rootDomain):
+                    return 'False'
     except:
         return 'False'
 
-    existed = site_collection.find({"url":{"$regex":rootDomain}})
-    if len(existed)>0:
-        for e in existed:
-            if(get_tld(e['url']) == rootDomain):
-                return 'False'
 
     if len(url.split('/'))<2:
         new_site = {
