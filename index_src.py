@@ -165,10 +165,15 @@ def checkOwnedFile(id):
                 res = r.get('http://www.'+get_tld(site['url'])+'/'+current_user+'.txt')
                 if current_user in res.text:
                     owned = True
-                else:
-                    owned = False
             except:
-                owned = False
+                try:
+                    res = r.get('http://blog.'+get_tld(site['url'])+'/'+current_user+'.txt')
+                    if current_user in res.text:
+                        owned = False
+                    else:
+                        owned = False
+                except:
+                    owned = False
         if(owned):
 
             res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set":{"owned":current_user}},
@@ -216,13 +221,18 @@ def checkOwnedMeta(id):
 
     url = "http://"+get_tld(site['url'])
     urlWithWWW = "http://www."+get_tld(site['url'])
+    urlWithBlog = "http://blog."+get_tld(site['url'])
+
     try:
         res = r.get(url)
     except:
         try:
             res = r.get(urlWithWWW)
         except:
-            return 'False'
+            try:
+                res = r.get(urlWithBlog)
+            except:
+                return 'False'
 
     soup = BeautifulSoup(res.text, "lxml")
 
