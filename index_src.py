@@ -3,6 +3,7 @@ import re
 import requests as r
 import simplejson as json
 import dns.resolver
+from bs4 import BeautifulSoup
 from flask import Flask
 from flask import request
 from flask import Response
@@ -205,6 +206,35 @@ def checkOwned(id):
         return res
     else:
         return 'False'
+
+
+@app.route('/owned/<string:id>/meta', methods=['GET'])
+@jwt_required
+def checkOwnedMeta(id):
+    current_user = get_jwt_identity()
+    site = site_collection.find_one({"_id":ObjectId(id)})
+
+    url = "http://"+get_tld(site['url'])
+    urlWithWWW = "http://www."+get_tld(site['url'])
+    try:
+        res = r.get(url)
+    except:
+        try:
+            res = r.get(urlWithWWW)
+        except:
+            return 'False'
+
+    soup = BeautifulSoup(res.text, "lxml")
+
+    meta = soup.find("meta", {"name":"leyline-verify"})
+
+    if meta is not None and meta.get('content') is not None and current_user in meta.get('content'):
+        res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set": {"owned": current_user}},
+                                                        return_document=ReturnDocument.AFTER))
+        return res
+    else:
+        return 'False'
+
 
 
 @app.route('/reg', methods=['POST'])
