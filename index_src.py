@@ -72,8 +72,12 @@ def hybridSearch():
         findObject['groups'] = query_groups
 
 
-    if query_owned is not None and query_owned is True:
-        findObject['owned'] = {"$exists":True}
+    if query_owned is not None:
+        if type(query_owned) is bool:
+            findObject['owned'] = {"$exists":query_owned}
+        else:
+            findObject['owned'] = query_owned
+
 
     findObject['$and'] = []
     if query_domain is not None:
