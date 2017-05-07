@@ -141,6 +141,36 @@ def update(id):
         res = str(e)
     return res
 
+@app.route('/site/add/<string:url>', methods = ['POST'])
+def add(url):
+    try:
+        urlWithHTTP = 'http://'+url
+        rootDomain = get_tld(urlWithHTTP)
+        res = r.get(urlWithHTTP)
+        res.raise_for_status()
+    except:
+        return 'False'
+
+    existed = site_collection.find({"url":{"$regex":rootDomain}})
+    if len(existed)>0:
+        for e in existed:
+            if(get_tld(e['url']) == rootDomain):
+                return 'False'
+
+    if len(url.split('/'))<2:
+        new_site = {
+            "url":url,
+            "valid":False,
+            "createdAt": datetime.now()
+        }
+        try:
+            res = dumps(site_collection.insert(new_site))
+            return res
+        except Exception as e:
+            return 'False'
+    return 'False'
+
+
 
 # Provide a method to create access tokens. The create_access_token()
 # function is used to actually generate the token
