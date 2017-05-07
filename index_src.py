@@ -21,7 +21,7 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, jwt_required,\
     create_access_token, get_jwt_identity
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='/static')
 bcrypt = Bcrypt(app)
 
 app.secret_key = get_secret()
@@ -33,6 +33,14 @@ client = MongoClient('mongodb://localhost:27017/')
 db = client.src_index
 site_collection = db.NewSites
 user_collection = db.Users
+
+@app.route('/')
+def root():
+    return app.send_static_file('index.html')
+
+@app.route('/<path:path>')
+def toBeReplacedWithNGinx(path):
+    return app.send_static_file(path)
 
 @app.route('/sites/search', methods = ['POST'])
 def hybridSearch():
