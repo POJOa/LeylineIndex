@@ -97,11 +97,12 @@ def hybridSearch():
 
 
     if query_keyword is not None:
-        orObj = {'$or':[{'title':query['keyword']}
-            ,{'url':query['keyword']}
-            ,{'meta.description':query['keyword']}
-            ,{'meta.keywords':query['keyword']}
-            ,{'meta.author':query['keyword']}]}
+        regex = {"$regex":'.*'+query_keyword+'.*'}
+        orObj = {'$or':[{'title':regex}
+            ,{'url':regex}
+            ,{'meta.description':regex}
+            ,{'meta.keywords':regex}
+            ,{'meta.author':regex}]}
         if len(orObj['$or'])>0:
             findObject['$and'].append(orObj)
 
@@ -152,9 +153,9 @@ def add(url):
         if len(existed) > 0:
             for e in existed:
                 if (get_tld(e['url']) == rootDomain):
-                    return 'False'
+                    return '{"err":true}'
     except:
-        return 'False'
+        return '{"err":true}'
 
 
     if len(url.split('/'))<2:
@@ -167,8 +168,8 @@ def add(url):
             res = dumps(site_collection.insert(new_site))
             return res
         except Exception as e:
-            return 'False'
-    return 'False'
+            return '{"err":true}'
+    return '{"err":true}'
 
 
 
@@ -223,7 +224,7 @@ def checkOwnedFile(id):
                                                             return_document=ReturnDocument.AFTER))
             return res
         else:
-            return 'False'
+            return '{"err":true}'
 
 @app.route('/owned/gen', methods=['GET'])
 @jwt_required
@@ -238,22 +239,26 @@ def genTxt():
 @app.route('/owned/<string:id>/cname', methods=['GET'])
 @jwt_required
 def checkOwned(id):
-    current_user = get_jwt_identity()
-    site = site_collection.find_one({"_id":ObjectId(id)})
-    url = current_user+'.'+get_tld(site['url'])
-    cname = dns.resolver.query(url, 'CNAME')
-    owned = False
-    for i in cname.response.answer:
-        for j in i.items:
-            if 'leyline.cc' in j.to_text():
-                owned = True
-                break
-    if (owned):
-        res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set": {"owned": current_user}},
-                                                        return_document=ReturnDocument.AFTER))
-        return res
-    else:
-        return 'False'
+    try:
+        current_user = get_jwt_identity()
+        site = site_collection.find_one({"_id":ObjectId(id)})
+        url = current_user+'.'+get_tld(site['url'])
+        cname = dns.resolver.query(url, 'CNAME')
+        owned = False
+        for i in cname.response.answer:
+            for j in i.items:
+                if 'leyline.cc' in j.to_text():
+                    owned = True
+                    break
+        if (owned):
+            res = dumps(site_collection.find_one_and_update({'_id': ObjectId(id)}, {"$set": {"owned": current_user}},
+                                                            return_document=ReturnDocument.AFTER))
+            return res
+        else:
+            return '{"err":true}'
+    except:
+        return '{"err":true}'
+
 
 @app.route('/like/<string:id>', methods=['GET'])
 @jwt_required
@@ -264,7 +269,7 @@ def like(id):
         res = dumps(user_collection.find_one_and_update({'_id': ObjectId(current_user)},{"$push":{"liked":[site['_id']]}},
                                                         return_document=ReturnDocument.AFTER))
         return res
-    return 'False'
+    return '{"err":true}'
 
 @app.route('/follow/<string:id>', methods=['GET'])
 @jwt_required
@@ -275,7 +280,7 @@ def follow(id):
         res = dumps(user_collection.find_one_and_update({'_id': ObjectId(current_user)},{"$push":{"following":[user_to_follow['_id']]}},
                                                         return_document=ReturnDocument.AFTER))
         return res
-    return 'False'
+    return '{"err":true}'
 
 @app.route('/owned/<string:id>/meta', methods=['GET'])
 @jwt_required
@@ -296,7 +301,7 @@ def checkOwnedMeta(id):
             try:
                 res = r.get(urlWithBlog)
             except:
-                return 'False'
+                return '{"err":true}'
 
     soup = BeautifulSoup(res.text, "lxml")
 
@@ -307,7 +312,7 @@ def checkOwnedMeta(id):
                                                         return_document=ReturnDocument.AFTER))
         return res
     else:
-        return 'False'
+        return '{"err":true}'
 
 
 
@@ -316,7 +321,7 @@ def reg():
     username = request.json.get('username', None)
     password = request.json.get('password', None)
     if checkNameExists(username):
-        return 'false',403
+        return '{"err":true}',403
     else:
         pw_hash = bcrypt.generate_password_hash(password)
         res = user_collection.insert({"username":username,"password":pw_hash})
