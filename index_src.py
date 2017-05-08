@@ -183,7 +183,8 @@ def phase2claim(id):
         res['veriToken'] = get_jwt_identity()
         expected = site_collection.find_one({"_id":ObjectId(id)})
         res['veriDomain'] = get_tld(expected['url'])
-        return json.dumps(res)
+        res['veriSiteId'] = expected['_id']
+        return dumps(res)
     except:
         return '{"err":true}'
 
