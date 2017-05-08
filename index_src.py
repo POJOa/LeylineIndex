@@ -142,8 +142,11 @@ def update(id):
         res = str(e)
     return res
 
-@app.route('/site/add/<string:url>', methods = ['POST'])
+@app.route('/owned/phase2/<string:url>/add', methods = ['POST'])
+@jwt_required
 def add(url):
+    current_user = get_jwt_identity()
+
     try:
         urlWithHTTP = 'http://'+url
         rootDomain = get_tld(urlWithHTTP)
@@ -162,7 +165,8 @@ def add(url):
         new_site = {
             "url":url,
             "valid":False,
-            "createdAt": datetime.now()
+            "createdAt": datetime.now(),
+            "owned":current_user
         }
         try:
             res = dumps(site_collection.insert(new_site))
@@ -171,6 +175,17 @@ def add(url):
             return '{"err":true}'
     return '{"err":true}'
 
+@app.route('/owned/phase2/<string:id>/claim', methods = ['GET'])
+@jwt_required
+def phase2claim(id):
+    try:
+        res = {}
+        res['veriToken'] = get_jwt_identity()
+        expected = site_collection.find_one({"_id":ObjectId(id)})
+        res['veriDomain'] = get_tld(expected['url'])
+        return json.dumps(res)
+    except:
+        return '{"err":true}'
 
 
 # Provide a method to create access tokens. The create_access_token()
