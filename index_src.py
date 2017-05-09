@@ -149,6 +149,7 @@ def update(id):
 @jwt_required
 def add(url):
     current_user = get_jwt_identity()
+    site = request.json
 
     try:
         urlWithHTTP = 'http://'+url
@@ -177,6 +178,28 @@ def add(url):
         except Exception as e:
             return '{"err":true}'
     return '{"err":true}'
+
+@app.route('/owned/phase3', methods = ['POST'])
+@jwt_required
+def phase3():
+    current_user = get_jwt_identity()
+    site = request.json()
+
+    try:
+        site_entity = site_collection.find_one({"_id":ObjectId(site.get('_id'))})
+        owner = site_entity['owned']
+        if owner != current_user:
+            return '{"err":true}'
+        site_entity['thumb'] = site['thumb']
+        site_entity['linkPage'] = site['linkPage']
+        site_entity['groups'] = site['groups']
+        user_collection.find_one_and_update({"_id":ObjectId(current_user)},{"$set":{"snsInfo":site_entity['snsInfo']}},
+                                                            return_document=ReturnDocument.AFTER)
+        return dumps(site_collection.update({"_id":ObjectId(site.get('_id'))},site_entity))
+
+    except:
+        return '{"err":true}'
+
 
 @app.route('/owned/phase2/<string:id>/claim', methods = ['GET'])
 @jwt_required
