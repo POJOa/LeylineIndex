@@ -302,7 +302,7 @@ def checkOwned(id):
         return '{"err":true}'
 
 
-@app.route('/like/<string:id>', methods=['GET'])
+@app.route('/sites/<string:id>/like', methods=['GET'])
 @jwt_required
 def like(id):
     current_user = get_jwt_identity()
