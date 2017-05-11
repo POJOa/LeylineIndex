@@ -41,11 +41,11 @@ user_collection = db.Users
 def root():
     return app.send_static_file('index.html')
 
-@app.route('/<path:path>')
+@app.route('/api/<path:path>')
 def toBeReplacedWithNGinx(path):
     return app.send_static_file(path)
 
-@app.route('/sites/search', methods = ['POST'])
+@app.route('/api/sites/search', methods = ['POST'])
 def hybridSearch():
     findObject = {}
 
@@ -131,12 +131,12 @@ def hybridSearch():
     res = {"pages":count,"res":cursor}
     return dumps(res)
 
-@app.route('/site/<string:hash>', methods = ['DELETE'])
+@app.route('/api/site/<string:hash>', methods = ['DELETE'])
 def delete(hash):
     site_collection.delete_one({"_id":ObjectId(hash)})
     return 'true'
 
-@app.route('/site/<string:id>', methods = ['POST'])
+@app.route('/api/site/<string:id>', methods = ['POST'])
 def update(id):
     updateInfo = request.get_json()
     try:
@@ -145,7 +145,7 @@ def update(id):
         res = str(e)
     return res
 
-@app.route('/owned/phase2/<string:url>/add', methods = ['POST'])
+@app.route('/api/owned/phase2/<string:url>/add', methods = ['POST'])
 @jwt_required
 def add(url):
     current_user = get_jwt_identity()
@@ -179,7 +179,7 @@ def add(url):
             return '{"err":true}'
     return '{"err":true}'
 
-@app.route('/owned/phase3', methods = ['POST'])
+@app.route('/api/owned/phase3', methods = ['POST'])
 @jwt_required
 def phase3():
     current_user = get_jwt_identity()
@@ -201,7 +201,7 @@ def phase3():
         return '{"err":true}'
 
 
-@app.route('/owned/phase2/<string:id>/claim', methods = ['GET'])
+@app.route('/api/owned/phase2/<string:id>/claim', methods = ['GET'])
 @jwt_required
 def phase2claim(id):
     try:
@@ -217,7 +217,7 @@ def phase2claim(id):
 
 # Provide a method to create access tokens. The create_access_token()
 # function is used to actually generate the token
-@app.route('/login', methods=['POST'])
+@app.route('/api/login', methods=['POST'])
 def login():
     username = request.json.get('username', None)
     password = request.json.get('password', None)
@@ -234,7 +234,7 @@ def login():
 
 # Provide a method to create access tokens. The create_access_token()
 # function is used to actually generate the token
-@app.route('/owned/<string:id>/file', methods=['GET'])
+@app.route('/api/owned/<string:id>/file', methods=['GET'])
 @jwt_required
 
 def checkOwnedFile(id):
@@ -268,7 +268,7 @@ def checkOwnedFile(id):
         else:
             return '{"err":true}'
 
-@app.route('/owned/gen', methods=['GET'])
+@app.route('/api/owned/gen', methods=['GET'])
 @jwt_required
 def genTxt():
     current_user = get_jwt_identity()
@@ -278,7 +278,7 @@ def genTxt():
                                  "attachment;filename="+current_user+".txt"})
 
 
-@app.route('/owned/<string:id>/cname', methods=['GET'])
+@app.route('/api/owned/<string:id>/cname', methods=['GET'])
 @jwt_required
 def checkOwned(id):
     try:
@@ -302,7 +302,7 @@ def checkOwned(id):
         return '{"err":true}'
 
 
-@app.route('/sites/<string:id>/like', methods=['GET'])
+@app.route('/api/sites/<string:id>/like', methods=['GET'])
 @jwt_required
 def like(id):
     current_user = get_jwt_identity()
@@ -313,7 +313,7 @@ def like(id):
         return res
     return '{"err":true}'
 
-@app.route('/follow/<string:id>', methods=['GET'])
+@app.route('/api/follow/<string:id>', methods=['GET'])
 @jwt_required
 def follow(id):
     current_user = get_jwt_identity()
@@ -324,7 +324,7 @@ def follow(id):
         return res
     return '{"err":true}'
 
-@app.route('/owned/<string:id>/meta', methods=['GET'])
+@app.route('/api/owned/<string:id>/meta', methods=['GET'])
 @jwt_required
 def checkOwnedMeta(id):
     current_user = get_jwt_identity()
@@ -358,7 +358,7 @@ def checkOwnedMeta(id):
 
 
 
-@app.route('/reg', methods=['POST'])
+@app.route('/api/reg', methods=['POST'])
 def reg():
     username = request.json.get('username', None)
     password = request.json.get('password', None)
@@ -369,18 +369,18 @@ def reg():
         res = user_collection.insert({"username":username,"password":pw_hash})
         return dumps(res),200
 
-@app.route('/reg/exists/<string:username>', methods=['GET'])
+@app.route('/api/reg/exists/<string:username>', methods=['GET'])
 def checkNameExists(username):
     expected = user_collection.find_one({"username": username})
     return expected is not None
 
 
-@app.route('/users/<string:id>', methods=['GET'])
+@app.route('/api/users/<string:id>', methods=['GET'])
 def getUser(id):
     expected = user_collection.find_one({"_id": ObjectId(id)},{"password":0})
     return dumps(expected)
 
-@app.route('/protected', methods=['GET'])
+@app.route('/api/protected', methods=['GET'])
 @jwt_required
 def protected():
     # Access the identity of the current user with get_jwt_identity
